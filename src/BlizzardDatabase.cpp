@@ -30,7 +30,15 @@ namespace BlizzardDatabaseLib
         if (!tableFound)
             std::cout << "Verion Not found" << std::endl;
 
-        auto fileStream = file_callback("DBFilesClient\\" + tableName + ".dbc");
+        // HACKFIX START -- We should probably be doing proper detection if a build is a DBC or DB2 build.
+        auto fileName = "DBFilesClient\\" + tableName + ".dbc";
+        const Structures::Build& dbcCutoffBuild = Structures::Build("7.0.3.21287"); // First build with no more DBC files at all.
+        if (_build > dbcCutoffBuild) {
+            fileName = "DBFilesClient\\" + tableName + ".db2";
+        }
+        
+        auto fileStream = file_callback(fileName);
+        // HACKFIX END
 
         auto streamReader = std::make_shared<Stream::StreamReader>(fileStream);
         auto fileFormatIdentifier = streamReader->ReadString(4);

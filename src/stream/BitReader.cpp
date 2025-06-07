@@ -28,17 +28,21 @@ namespace BlizzardDatabaseLib {
             auto index = Offset + (Position >> 3);
             auto p1 = (32 - numberOfBits - (Position & 7));
             auto p2 = (32 - numberOfBits);
-            auto ptrSize = sizeof(unsigned int);
+            constexpr size_t ptrSize = sizeof(uint32_t);
 
-            if (index + ptrSize > DataLength)
-            {
-              throw std::out_of_range("Read access out of bounds");
+            if (index + ptrSize > DataLength) {
+                size_t over = (index + ptrSize) - DataLength;
+                if (over > 3) {
+                    throw std::out_of_range("Read access out of bounds");
+                }
             }
 
             unsigned int result;
             memcpy(&result, _dataStart.get() + index, ptrSize);
 
-            result = result << p1 >> p2;
+            if (p1 > 0)
+                result = result << p1;
+            result = result >> p2;
 
             Position += numberOfBits;
             return result;
@@ -55,15 +59,19 @@ namespace BlizzardDatabaseLib {
             if (numberOfBits <= 32)
               ptrSize = sizeof(unsigned int);
 
-            if (index + ptrSize > DataLength)
-            {
-              throw std::out_of_range("Read access out of bounds");
+            if (index + ptrSize > DataLength) {
+                size_t over = (index + ptrSize) - DataLength;
+                if (over > 3) {
+                    throw std::out_of_range("Read access out of bounds");
+                }
             }
 
             unsigned long long result;
             memcpy(&result, _dataStart.get() + index, ptrSize);
 
-            result = result << p1 >> p2;
+            if (p1 > 0)
+                result = result << p1;
+            result = result >> p2;
 
             Position += numberOfBits;
             return result;

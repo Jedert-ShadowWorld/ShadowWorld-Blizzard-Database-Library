@@ -103,6 +103,7 @@ namespace BlizzardDatabaseLib {
                         auto data = palletData[i + cardinality * (index)].As<T>();
                         vector.push_back(data);
                     }
+                    break;
                 }
                   default:
                     assert(false);

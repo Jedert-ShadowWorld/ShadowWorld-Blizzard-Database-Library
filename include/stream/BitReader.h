@@ -22,6 +22,7 @@ namespace BlizzardDatabaseLib {
             unsigned long long ReadUint64(int numberOfBits);
             Structures::Int64 ReadValue64(int numberOfBits);
             Structures::Int64 ReadSignedValue64(int numberOfBits);
+            void Reset(int offset = 0) { Position = 0; Offset = offset; }
         };
 
     }
