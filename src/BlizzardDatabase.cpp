@@ -28,7 +28,7 @@ namespace BlizzardDatabaseLib
         auto tableFound = databaseDefinition.For(_build, tableDefinition);
 
         if (!tableFound)
-            std::cout << "Verion Not found" << std::endl;
+            std::cout << "Version Not found" << std::endl;
 
         // HACKFIX START -- We should probably be doing proper detection if a build is a DBC or DB2 build.
         auto fileName = "DBFilesClient\\" + tableName + ".dbc";
@@ -43,7 +43,7 @@ namespace BlizzardDatabaseLib
         auto streamReader = std::make_shared<Stream::StreamReader>(fileStream);
         auto fileFormatIdentifier = streamReader->ReadString(4);
 
-        auto tableReader = _blizzardTableReaderFactory.For(streamReader, tableDefinition,fileFormatIdentifier);
+        auto tableReader = _blizzardTableReaderFactory.For(streamReader, tableDefinition, fileFormatIdentifier);
 
         auto constructedTable = std::make_shared<BlizzardDatabaseTable>(tableReader);
         constructedTable->LoadTableStructure();
@@ -63,7 +63,7 @@ namespace BlizzardDatabaseLib
         auto tableFound = databaseDefinition.For(_build, tableDefinition);
 
         if (!tableFound)
-            std::cout << "Verion Not found" << std::endl;
+            std::cout << "Version Not found" << std::endl;
 
         auto filePath = std::filesystem::path(outputDirectory) / (tableName + ".dbc");
         auto outputStream = std::ofstream(filePath, std::ios::out | std::ios::binary);
