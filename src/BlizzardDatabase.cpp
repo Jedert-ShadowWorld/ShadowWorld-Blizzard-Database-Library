@@ -9,6 +9,7 @@ namespace BlizzardDatabaseLib
     {
         _loadedTables = std::map<std::string, std::shared_ptr<BlizzardDatabaseTable>>();
         _blizzardTableReaderFactory = Reader::BlizzardTableReaderFactory();
+        _table_definitions = std::map<std::string, Structures::VersionDefinition>();
     }
 
     const BlizzardDatabaseTable& BlizzardDatabase::LoadTable(const std::string& tableName,
@@ -20,12 +21,14 @@ namespace BlizzardDatabaseLib
             return *_loadedTables[tableName];
         }
 
+        // get table definition
         auto absoluteFilePathOfDatabaseTableDefinition =  std::filesystem::path(_databaseDefinitionFilesLocation) /
             (tableName + ".dbd");
 
         auto databaseDefinition = DatabaseDefinition(absoluteFilePathOfDatabaseTableDefinition.generic_string());
         auto tableDefinition = Structures::VersionDefinition();
-        auto tableFound = databaseDefinition.For(_build, tableDefinition);
+        auto tableFound = databaseDefinition.For(_build, tableDefinition); // unclean table definition.  pruned one from : WDBCTableReader::RecordDefinition()
+        tableDefinition.tableName = tableName;
 
         if (!tableFound)
             std::cout << "Verion Not found" << std::endl;
@@ -37,7 +40,7 @@ namespace BlizzardDatabaseLib
 
         auto tableReader = _blizzardTableReaderFactory.For(streamReader, tableDefinition,fileFormatIdentifier);
 
-        auto constructedTable = std::make_shared<BlizzardDatabaseTable>(tableReader);
+        auto constructedTable = std::make_shared<BlizzardDatabaseTable>(tableReader, tableName);
         constructedTable->LoadTableStructure();
 
         _loadedTables.emplace(tableName, constructedTable);
@@ -77,5 +80,38 @@ namespace BlizzardDatabaseLib
         table.reset();
 
         _loadedTables.erase(tableName);
+    }
+
+    Structures::VersionDefinition BlizzardDatabase::TableDefinition(const std::string& tableName)
+    {
+      if (_table_definitions.contains(tableName))
+      {
+        return _table_definitions[tableName];
+      }
+
+      auto absoluteFilePathOfDatabaseTableDefinition = std::filesystem::path(_databaseDefinitionFilesLocation) /
+        (tableName + ".dbd");
+
+      auto databaseDefinition = DatabaseDefinition(absoluteFilePathOfDatabaseTableDefinition.generic_string());
+      auto tableVersionDefinition = Structures::VersionDefinition();
+
+      auto tableFound = databaseDefinition.For(_build, tableVersionDefinition); // this initializes definition for the version
+
+      if (!tableFound)
+      {
+        std::cout << "Verion Not found" << std::endl;
+        return tableVersionDefinition;
+      }
+
+      tableVersionDefinition.tableName = tableName;
+
+      _table_definitions.emplace(tableName, tableVersionDefinition);
+
+      return tableVersionDefinition;
+    }
+
+    Structures::BlizzardDatabaseRowDefinition BlizzardDatabase::TableRecordDefinition(const std::string& tableName)
+    {
+      return TableDefinition(tableName).RowDefinition;
     }
 }

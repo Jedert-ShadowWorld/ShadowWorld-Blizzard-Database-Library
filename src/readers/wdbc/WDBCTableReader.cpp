@@ -1,6 +1,8 @@
 #include <readers/wdbc/WDBCTableReader.h>
 #include <extensions/MemoryExtensions.h>
 
+#include <cassert>
+
 namespace BlizzardDatabaseLib {
     namespace Reader {
   
@@ -22,7 +24,7 @@ namespace BlizzardDatabaseLib {
 
             if (length < headerSize)
             {
-                std::cout << "Error Occured While Parsing WDC3 Header, Header to short." << std::endl;
+                std::cout << "Error Occured While Parsing WDBC Header, Header to short." << std::endl;
                 return;
             }
 
@@ -31,7 +33,7 @@ namespace BlizzardDatabaseLib {
             auto magicNumber = _streamReader->Read<unsigned int>();
             if (magicNumber != Flag::TableFormatSignatures::WDBC_FMT_SIGNATURE)
             {
-                std::cout << "Error Occured While Parsing WDC3 Header, Format Signature doesnt Match." << std::endl;
+                std::cout << "Error Occured While Parsing WDBC Header, Format Signature doesnt Match." << std::endl;
                 return;
             }
 
@@ -45,17 +47,30 @@ namespace BlizzardDatabaseLib {
                 _stringTable[i] = stringValue;
                 i += static_cast<int>(_streamReader->Position() - lastPosition);
             }
+            assert(Header.RecordSize == (Header.FieldsCount * 4)); // Find out if there's any column that doesn't use 4 bytes in WDBC, in which case we need a rewrite
         }
 
         Structures::BlizzardDatabaseRow WDBCTableReader::RecordById(unsigned int Id)
         {
-            auto offset = 0;
+            assert(_versionDefinition.hasId); // attempt to get record by id on a table that doesn't have a key/id column. use Record() instead
+            if (!_versionDefinition.hasId)
+              return Structures::BlizzardDatabaseRow();
+
+            int offset = 0;
             for(int i = 0; i < Header.RecordsCount; i++)
             {
-                auto recordDataBlock = std::make_unique<char[]>(32);
-                memcpy(recordDataBlock.get(), _recordData.get() + offset, 32);
+                int id_col_size = _versionDefinition.versionDefinitions.definitions[_versionDefinition.idColumnIndex].size;
+                assert(id_col_size == 32);
+
+                // this assumes all columns have the same size as id column.
+                // to be robust, if columns ever have different sizes and id wasn't at the beginning we would have to properly iterate the row
+                int id_column_offset = offset + (id_col_size * _versionDefinition.idColumnIndex);
+
+                auto recordDataBlock = std::make_unique<char[]>(id_col_size);
+                memcpy(recordDataBlock.get(), _recordData.get() + id_column_offset, id_col_size);
                 auto bitReader = Stream::BitReader(recordDataBlock, Header.RecordSize);
-                auto rowId = bitReader.ReadUint32(32);
+
+                auto rowId = bitReader.ReadUint32(id_col_size);
                 if(rowId == Id)
                 {
                     return Record(i);
@@ -75,12 +90,27 @@ namespace BlizzardDatabaseLib {
 
             auto bitReader = Stream::BitReader(recordDataBlock, Header.RecordSize);
 
-            auto rowId = bitReader.ReadUint32(32);
-            auto row = Structures::BlizzardDatabaseRow(rowId);
-            for(auto i = 1; i < _versionDefinition.versionDefinitions.definitions.size(); i++)
+            // TODO : un-hardcode size if needed
+            assert(_versionDefinition.idColumnIndex == 0); // for dev, find if there's ever any dbc that has id =/= column 0, in this case this is fucked
+            unsigned int rowId = -1;
+            int i = 0;
+            if (_versionDefinition.hasId)
             {
-                auto definition = _versionDefinition.versionDefinitions.definitions[i];
-                auto columnDefinition = _versionDefinition.columnDefinitions.at(definition.name);
+              i = 1;
+              int id_col_size = _versionDefinition.versionDefinitions.definitions[_versionDefinition.idColumnIndex].size;
+              // int id_column_offset = offset + (id_col_size * _versionDefinition.idColumnIndex);
+              rowId = bitReader.ReadUint32(id_col_size); // read id from first column
+            }
+
+            auto row = Structures::BlizzardDatabaseRow(rowId);
+            for(i; i < _versionDefinition.versionDefinitions.definitions.size(); i++) // !!! skips first column, starts at i = 1.
+            {
+                auto& definition = _versionDefinition.versionDefinitions.definitions[i];
+                auto& columnDefinition = _versionDefinition.columnDefinitions.at(definition.name);
+
+                if (columnDefinition.type == "int")
+                  assert(definition.size == 32); // Find out if there's any column that doesn't use 4 bytes in WDBC
+
                 auto column = Structures::BlizzardDatabaseColumn();
 
                 auto value = std::string();
@@ -161,6 +191,7 @@ namespace BlizzardDatabaseLib {
                 }
                 else
                 {
+                    assert(false);
                     std::cout << "Unknown Type" << std::endl;
                 }
 
@@ -183,22 +214,14 @@ namespace BlizzardDatabaseLib {
             return Header.RecordsCount;
         }
 
-        std::vector<Structures::BlizzardDatabaseRowDefiniton> WDBCTableReader::RecordDefinition()
+        std::size_t WDBCTableReader::FieldCount()
         {
-            auto recordDefinition = std::vector<Structures::BlizzardDatabaseRowDefiniton>();
-            for (auto& columnInformation : _versionDefinition.versionDefinitions.definitions)
-            {
-                auto column = Structures::BlizzardDatabaseRowDefiniton();
-                column.Type = _versionDefinition.columnDefinitions[columnInformation.name].type;
-                column.Name = columnInformation.name;
-                column.arrLength = columnInformation.arrLength;
-                column.isID = columnInformation.isID;
-                column.isRelation = columnInformation.isRelation;
+          return Header.FieldsCount;
+        }
 
-                recordDefinition.push_back(column);
-            }
-
-            return recordDefinition;
+        Structures::BlizzardDatabaseRowDefinition WDBCTableReader::RecordDefinition()
+        {
+            return _versionDefinition.RowDefinition;
         }
     }
 }

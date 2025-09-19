@@ -210,22 +210,14 @@ namespace BlizzardDatabaseLib {
             return recordCount;
         }
 
-        std::vector<Structures::BlizzardDatabaseRowDefiniton> WDC3TableReader::RecordDefinition()
+        std::size_t WDC3TableReader::FieldCount()
         {
-            auto recordDefinition = std::vector<Structures::BlizzardDatabaseRowDefiniton>();
-            for (auto& columnInformation : _versionDefinition.versionDefinitions.definitions)
-            {
-                auto column = Structures::BlizzardDatabaseRowDefiniton();
-                column.Type = _versionDefinition.columnDefinitions[columnInformation.name].type;
-                column.Name = columnInformation.name;
-                column.arrLength = columnInformation.arrLength;
-                column.isID = columnInformation.isID;
-                column.isRelation = columnInformation.isRelation;
+          return Header.FieldsCount;
+        }
 
-                recordDefinition.push_back(column);
-            }
-
-            return recordDefinition;
+        Structures::BlizzardDatabaseRowDefinition WDC3TableReader::RecordDefinition()
+        {
+            return _versionDefinition.RowDefinition;
         }
     }
 }

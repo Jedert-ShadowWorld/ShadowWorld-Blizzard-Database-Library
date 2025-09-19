@@ -24,13 +24,39 @@ namespace BlizzardDatabaseLib {
             BlizzardDatabaseRow(int recordId) : RecordId(recordId) {}
         };
 
-        struct BlizzardDatabaseRowDefiniton
+        // Definition for BlizzardDatabaseColumn objects
+        struct BlizzardDatabaseColumnDefiniton
         {
-            std::string Type;
-            std::string Name;
+            std::string Type = "";
+            std::string Name = "";
             bool isID;
             int arrLength;
             bool isRelation;
+            bool isSigned;
+            // int size;
+        };
+
+        // Definition for BlizzardDatabaseRow objects
+        struct BlizzardDatabaseRowDefinition
+        {
+          std::vector<BlizzardDatabaseColumnDefiniton> ColumnDefinitions;
+
+          BlizzardDatabaseColumnDefiniton getColumnDefinition(const std::string& columnName)
+          {
+            for (auto const& column_def : ColumnDefinitions)
+            {
+              if (column_def.Name == columnName)
+              {
+                return column_def;
+              }
+            }
+            return BlizzardDatabaseColumnDefiniton();
+          }
+
+          std::string getColumnType(const std::string& columnName)
+          {
+            return getColumnDefinition(columnName).Type;
+          }
         };
 
         struct ColumnDefinition
@@ -45,7 +71,7 @@ namespace BlizzardDatabaseLib {
 
         struct Definition
         {
-            int size;
+            int size; // generated from type, not from the file
             int arrLength;
             std::string name;
             bool isID;
@@ -87,14 +113,49 @@ namespace BlizzardDatabaseLib {
 
         struct VersionDefinition
         {
-            std::map<std::string, ColumnDefinition> columnDefinitions;
-            VersionDefinitions versionDefinitions;
+            friend class DatabaseDefinition;
+
+            std::string tableName;
+            Structures::BlizzardDatabaseRowDefinition RowDefinition; // cleaned up data
+
+            // those are initialized by DatabaseDefinition::For
+            VersionDefinitions versionDefinitions; // Definitions only column definition for relevent version. internal data
+            // std::vector<Definition> versionDefinition;
+            std::map<std::string, ColumnDefinition> columnDefinitions; // all columns, even from different versions
+
+            bool hasId;
+            int idColumnIndex;
 
             VersionDefinition()
             {
-                columnDefinitions = std::map<std::string, ColumnDefinition>();
+                // columnDefinitions = std::map<std::string, ColumnDefinition>();
                 versionDefinitions = VersionDefinitions();
+                // versionDefinition = std::vector<Definition>();
+
+                hasId = false;
+                idColumnIndex = 0;
             }
+
+            void initializeRowDefinition()
+            {
+              auto recordDefinition = Structures::BlizzardDatabaseRowDefinition();
+              for (auto& columnInformation : versionDefinitions.definitions)
+              {
+                auto column = Structures::BlizzardDatabaseColumnDefiniton();
+                column.Type = columnDefinitions[columnInformation.name].type;
+                column.Name = columnInformation.name;
+                column.arrLength = columnInformation.arrLength;
+                column.isID = columnInformation.isID;
+                column.isRelation = columnInformation.isRelation;
+                column.isSigned = columnInformation.isSigned;
+
+                recordDefinition.ColumnDefinitions.push_back(column);
+              }
+              RowDefinition = recordDefinition;
+            }
+        private:
+
+
         };
     }
 }
