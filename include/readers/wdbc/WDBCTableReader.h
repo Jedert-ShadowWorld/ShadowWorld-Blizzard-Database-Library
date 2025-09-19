@@ -30,7 +30,7 @@ namespace BlizzardDatabaseLib {
             Structures::WDBCHeader Header;
             std::shared_ptr<char[]> _recordData;
             std::map<long, std::string> _stringTable;
-            Structures::VersionDefinition _versionDefinition;
+            Structures::VersionDefinition _versionDefinition; // contains versionDefinitions which has the current version definitions
         public:
             WDBCTableReader(std::shared_ptr<Stream::StreamReader> streamReader, Structures::VersionDefinition versionDefinition);
             ~WDBCTableReader();
@@ -38,8 +38,9 @@ namespace BlizzardDatabaseLib {
             void CloseAllSections() override;
             Structures::BlizzardDatabaseRow RecordById(unsigned int Id) override;
             Structures::BlizzardDatabaseRow Record(unsigned int index) override;
-            std::vector<Structures::BlizzardDatabaseRowDefiniton> RecordDefinition() override;
+            Structures::BlizzardDatabaseRowDefinition RecordDefinition() override;
             std::size_t RecordCount() override;
+            std::size_t FieldCount() override;
         };
     }
     namespace Writer

@@ -1,5 +1,7 @@
 #include <DatabaseDefinition.h>
 
+#include <cassert>
+
 namespace BlizzardDatabaseLib
 {
 
@@ -313,7 +315,9 @@ namespace BlizzardDatabaseLib
             if (std::find(builds.begin(), builds.end(), build) != builds.end())
             {
                 definition.versionDefinitions = versionDefiniton;
-                return true;
+                // definition.versionDefinition = versionDefiniton.definitions;
+                versionFound = true;
+                break;
             }
 
             auto buildRanges = versionDefiniton.buildRanges;
@@ -322,11 +326,33 @@ namespace BlizzardDatabaseLib
                 if (buildRange.Contains(build))
                 {
                     definition.versionDefinitions = versionDefiniton;
-                    return true;
+                    // definition.versionDefinition = versionDefiniton.definitions;
+                    versionFound = true;
+                    break;
                 }
             }
+            if (versionFound)
+              break;
+        }
+        if (!versionFound)
+          return false;
+
+        definition.initializeRowDefinition();
+        // set Id column position
+        for (int i = 0; i < definition.RowDefinition.ColumnDefinitions.size(); i++)
+        {
+          auto& internal_definition = definition.versionDefinitions.definitions[i];
+          if (internal_definition.isID)
+          {
+            assert(!definition.hasId); // multiple keys detected
+            if (!definition.hasId)
+            {
+              definition.hasId = true;
+              definition.idColumnIndex = i;
+            }
+          }
         }
 
-        return false;
+        return true;
     }
 }
