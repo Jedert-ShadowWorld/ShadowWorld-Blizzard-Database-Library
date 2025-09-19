@@ -34,7 +34,7 @@ namespace BlizzardDatabaseLib
         if (!tableFound)
             std::cout << "Version Not found" << std::endl;
 
-        // HACKFIX START -- We should probably be doing proper detection if a build is a DBC or DB2 build.
+        // HACKFIX START -- We should probably be doing proper detection to see if a .db2 file exists first, if not fallback to .dbc
         auto fileName = "DBFilesClient\\" + tableName + ".dbc";
         const Structures::Build& dbcCutoffBuild = Structures::Build("7.0.3.21287"); // First build with no more DBC files at all.
         if (_build > dbcCutoffBuild) {
