@@ -32,14 +32,22 @@ namespace BlizzardDatabaseLib
         tableDefinition.tableName = tableName;
 
         if (!tableFound)
-            std::cout << "Verion Not found" << std::endl;
+            std::cout << "Version Not found" << std::endl;
 
-        auto fileStream = file_callback("DBFilesClient\\" + tableName + ".dbc");
+        // HACKFIX START -- We should probably be doing proper detection to see if a .db2 file exists first, if not fallback to .dbc
+        auto fileName = "DBFilesClient\\" + tableName + ".dbc";
+        const Structures::Build& dbcCutoffBuild = Structures::Build("7.0.3.21287"); // First build with no more DBC files at all.
+        if (_build > dbcCutoffBuild) {
+            fileName = "DBFilesClient\\" + tableName + ".db2";
+        }
+        
+        auto fileStream = file_callback(fileName);
+        // HACKFIX END
 
         auto streamReader = std::make_shared<Stream::StreamReader>(fileStream);
         auto fileFormatIdentifier = streamReader->ReadString(4);
 
-        auto tableReader = _blizzardTableReaderFactory.For(streamReader, tableDefinition,fileFormatIdentifier);
+        auto tableReader = _blizzardTableReaderFactory.For(streamReader, tableDefinition, fileFormatIdentifier);
 
         auto constructedTable = std::make_shared<BlizzardDatabaseTable>(tableReader, tableName);
         constructedTable->LoadTableStructure();
@@ -59,7 +67,7 @@ namespace BlizzardDatabaseLib
         auto tableFound = databaseDefinition.For(_build, tableDefinition);
 
         if (!tableFound)
-            std::cout << "Verion Not found" << std::endl;
+            std::cout << "Version Not found" << std::endl;
 
         auto filePath = std::filesystem::path(outputDirectory) / (tableName + ".dbc");
         auto outputStream = std::ofstream(filePath, std::ios::out | std::ios::binary);
