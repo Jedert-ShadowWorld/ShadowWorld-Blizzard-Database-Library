@@ -26,8 +26,15 @@ namespace BlizzardDatabaseLib {
 
         ~BlizzardDatabaseTable()
         {
+            // TODO : when copied BlizzardDatabaseTable objects go out of scope they call this, and it resets the reader for the main object too!
             _tableReader->CloseAllSections();
         }
+        // force no copy for the problem above
+        BlizzardDatabaseTable(const BlizzardDatabaseTable&) = delete;
+        BlizzardDatabaseTable& operator=(const BlizzardDatabaseTable&) = delete;
+
+        BlizzardDatabaseTable(BlizzardDatabaseTable&&) noexcept = default;
+        BlizzardDatabaseTable& operator=(BlizzardDatabaseTable&&) noexcept = default;
 
         unsigned int RecordCount() const
         {
@@ -55,7 +62,7 @@ namespace BlizzardDatabaseLib {
           return _tableReader->Record(positionId);
         }
 
-        BlizzardDatabaseRecordCollection Records()
+        BlizzardDatabaseRecordCollection Records() const
         {
             return BlizzardDatabaseRecordCollection(_tableReader);
         }
@@ -65,7 +72,7 @@ namespace BlizzardDatabaseLib {
             return _tableReader->RecordDefinition();
         }
 
-        void WriterRecord(Structures::BlizzardDatabaseRow& newRecord)
+        void WriteRecord(Structures::BlizzardDatabaseRow& newRecord)
         {
 
 

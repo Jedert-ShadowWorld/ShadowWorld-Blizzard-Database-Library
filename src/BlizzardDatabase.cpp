@@ -12,7 +12,8 @@ namespace BlizzardDatabaseLib
         _table_definitions = std::map<std::string, Structures::VersionDefinition>();
     }
 
-    const BlizzardDatabaseTable& BlizzardDatabase::LoadTable(const std::string& tableName,
+    // must use as a ref, copies not allowed
+    BlizzardDatabaseTable& BlizzardDatabase::LoadTable(const std::string& tableName,
        std::function<std::shared_ptr<BlizzardDatabaseLib::Stream::IMemStream>(std::string const&)> file_callback)
     {
         if (_loadedTables.contains(tableName))
@@ -64,6 +65,9 @@ namespace BlizzardDatabaseLib
         auto outputStream = std::ofstream(filePath, std::ios::out | std::ios::binary);
 
         auto fileWriter = Writer::WDBCTableWriter(outputStream,  tableDefinition);
+
+        // TODO : also need to update the table in memory for the change
+
         return fileWriter.Write(rows);
     }
 
