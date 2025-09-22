@@ -17,6 +17,30 @@ namespace BlizzardDatabaseLib {
         };
 
 #pragma pack(push,2)
+        struct WDC5Header
+        {
+            unsigned int SchemaVersion;
+            char SchemaString[128];
+            int RecordsCount;
+            int FieldsCount;
+            int RecordSize;
+            int StringTableSize;
+            unsigned int TableHash;
+            unsigned int LayoutHash;
+            int MinIndex;
+            int MaxIndex;
+            int Locale;
+            Flag::DatabaseVersion2Flag Flags;
+            unsigned short IdFieldIndex;
+            int totalFieldsCount;
+            int PackedDataOffset;
+            int lookupColumnCount4;
+            int columnMetaDataSize;
+            int commonDataSize;
+            int palletDataSize;
+            int sectionsCount;
+        };
+
         struct WDC3Header
         {
             int RecordsCount;
@@ -51,6 +75,19 @@ namespace BlizzardDatabaseLib {
         {
             unsigned int Offset;
             unsigned short Size;
+        };
+
+        struct WDC5Section
+        {
+            unsigned long long TactKeyLookup;
+            int FileOffset;
+            int NumRecords;
+            int StringTableSize;
+            int OffsetRecordsEndOffset;
+            int IndexDataSize;
+            int ParentLookupDataSize;
+            int OffsetMapIDCount;
+            int CopyTableCount;
         };
 
         struct WDC3Section

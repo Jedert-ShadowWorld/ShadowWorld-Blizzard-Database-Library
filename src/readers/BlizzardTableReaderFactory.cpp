@@ -6,6 +6,8 @@ namespace BlizzardDatabaseLib {
 		{
 			std::cout << "File Header Format: " << formatSignature << std::endl;
 
+			if (Extension::String::Compare(formatSignature, std::string("WDC5")))
+				return std::make_shared<WDC5TableReader>(streamReader, versionDefinition);
 			if (Extension::String::Compare(formatSignature, std::string("WDC3")))
 				return std::make_shared<WDC3TableReader>(streamReader, versionDefinition);
 			if (Extension::String::Compare(formatSignature, std::string("WDBC")))

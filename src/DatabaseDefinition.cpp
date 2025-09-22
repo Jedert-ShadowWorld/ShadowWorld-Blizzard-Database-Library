@@ -51,7 +51,11 @@ namespace BlizzardDatabaseLib
             }
 
             auto indexOfCommentsStart = line.find_first_of("//");
+
             auto indexOfForeignKeyStart = line.find_first_of("<");
+            if (indexOfForeignKeyStart > indexOfCommentsStart)
+                indexOfForeignKeyStart = std::string::npos; // No foreign key if it is after the comment
+
             auto indexOfForeignKeyEnd = line.find_first_of(">");
             auto indexOfNameStart = line.find_first_of(" ");
             auto indexOfNameEnd = line.find(" ", indexOfNameStart + 1);
