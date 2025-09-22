@@ -20,6 +20,12 @@ namespace BlizzardDatabaseLib {
             int RecordId = -1;
             std::map<std::string, BlizzardDatabaseColumn> Columns;
 
+            float getFloat(int field) const;
+            unsigned int getUInt(int field) const;
+            int getInt(int field) const;
+            char* getString(int field) const;
+            char* getLocalizedString(int field, int locale = -1) const;
+
             BlizzardDatabaseRow() = default;
             BlizzardDatabaseRow(int recordId) : RecordId(recordId) {}
         };

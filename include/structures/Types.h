@@ -41,10 +41,10 @@ namespace BlizzardDatabaseLib {
 
         struct WDBCHeader
         {
-            int RecordsCount;
-            int FieldsCount;
-            int RecordSize;
-            int StringTableSize;
+            int RecordsCount = 0;
+            int FieldsCount = 0;
+            int RecordSize = 0;
+            int StringTableSize = 0;
         };
 
         struct SparseEntry

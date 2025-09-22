@@ -16,6 +16,9 @@ namespace BlizzardDatabaseLib {
     public:
         BlizzardDatabaseRecordCollection(std::shared_ptr<Reader::IBlizzardTableReader> tableReader)
         {
+            // tableReader->CloseAllSections();
+            // tableReader->LoadTableStructure();
+
             _maxIndex = static_cast<int>(tableReader->RecordCount());
             _tableReader = tableReader;
         }
@@ -32,6 +35,8 @@ namespace BlizzardDatabaseLib {
             return _currentRecord;
         }
 
+        // too painful to reimplement in sql and not needed yet
+        /*
         Structures::BlizzardDatabaseRow& First()
         {
             _currentRecord = _tableReader->Record(_minIndex);
@@ -42,6 +47,6 @@ namespace BlizzardDatabaseLib {
         {
             _currentRecord = _tableReader->Record(_maxIndex);
             return _currentRecord;
-        }
+        }*/
     };
 }

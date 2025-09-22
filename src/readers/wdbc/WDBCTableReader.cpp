@@ -6,7 +6,8 @@
 namespace BlizzardDatabaseLib {
     namespace Reader {
   
-        WDBCTableReader::WDBCTableReader(std::shared_ptr<Stream::StreamReader> streamReader, Structures::VersionDefinition versionDefinition) : _streamReader(streamReader), _versionDefinition(versionDefinition)
+        WDBCTableReader::WDBCTableReader(std::shared_ptr<Stream::StreamReader> streamReader, Structures::VersionDefinition versionDefinition)
+          : _streamReader(streamReader), _versionDefinition(versionDefinition), Header{ 0, 0, 0, 0 }
         {
             _stringTable = std::map<long, std::string>();
         }

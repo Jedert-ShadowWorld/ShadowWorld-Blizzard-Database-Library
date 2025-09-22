@@ -79,7 +79,7 @@ namespace BlizzardDatabaseLib
             return;
         }
 
-        auto table = _loadedTables.at(tableName);
+        auto& table = _loadedTables.at(tableName);
 
         table.reset();
 
