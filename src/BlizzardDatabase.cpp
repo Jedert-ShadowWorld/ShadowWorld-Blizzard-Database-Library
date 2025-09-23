@@ -94,7 +94,7 @@ namespace BlizzardDatabaseLib
         _loadedTables.erase(tableName);
     }
 
-    Structures::VersionDefinition BlizzardDatabase::TableDefinition(const std::string& tableName)
+    Structures::VersionDefinition& BlizzardDatabase::TableDefinition(const std::string& tableName)
     {
       if (_table_definitions.contains(tableName))
       {
@@ -122,7 +122,7 @@ namespace BlizzardDatabaseLib
       return tableVersionDefinition;
     }
 
-    Structures::BlizzardDatabaseRowDefinition BlizzardDatabase::TableRecordDefinition(const std::string& tableName)
+    Structures::BlizzardDatabaseRowDefinition& BlizzardDatabase::TableRecordDefinition(const std::string& tableName)
     {
       return TableDefinition(tableName).RowDefinition;
     }

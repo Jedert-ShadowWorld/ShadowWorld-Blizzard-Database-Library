@@ -156,7 +156,7 @@ namespace BlizzardDatabaseLib {
                     auto intValue = bitReader.ReadUint32(32);
                     column.Value = _stringTable.at(intValue);
 
-                    std::vector<std::string> localizedValues = std::vector<std::string>();
+                    std::vector<std::string> localizedValues = std::vector<std::string>(16);
                     localizedValues.push_back(_stringTable.at(intValue));
                     for(int i = 0 ; i < 15; i++)
                     {

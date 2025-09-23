@@ -36,8 +36,8 @@ namespace BlizzardDatabaseLib
 		BlizzardDatabase(const std::string& databaseDefinitionDirectory, const Structures::Build& build);
 	BlizzardDatabaseTable& LoadTable(const std::string& tableName, std::function<std::shared_ptr<BlizzardDatabaseLib::Stream::IMemStream>(std::string const&)> file_callback);
 	
-		Structures::VersionDefinition TableDefinition(const std::string& tableName);
-		Structures::BlizzardDatabaseRowDefinition TableRecordDefinition(const std::string& tableName);
+		Structures::VersionDefinition& TableDefinition(const std::string& tableName);
+		Structures::BlizzardDatabaseRowDefinition& TableRecordDefinition(const std::string& tableName);
 		inline unsigned int getBuild() { return _build.buildId(); };
 	protected:
 		bool SaveTable(const std::string& outputDirectory, const std::string& tableName, std::vector<Structures::BlizzardDatabaseRow>& rows);
