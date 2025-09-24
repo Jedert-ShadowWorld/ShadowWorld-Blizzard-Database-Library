@@ -160,6 +160,8 @@ namespace BlizzardDatabaseLib {
             void initializeRowDefinition()
             {
               auto recordDefinition = Structures::BlizzardDatabaseRowDefinition();
+              recordDefinition.ColumnDefinitions.reserve(versionDefinitions.definitions.size());
+
               for (auto& columnInformation : versionDefinitions.definitions)
               {
                 auto column = Structures::BlizzardDatabaseColumnDefiniton();

@@ -119,6 +119,7 @@ namespace BlizzardDatabaseLib {
                 {
                     if (definition.arrLength > 1)
                     {
+                        column.Values.reserve(definition.arrLength);
                         for (int i = 0; i < definition.arrLength; i++)
                         {
                             // auto intValue = bitReader.ReadSignedValue64(32).As<int>();
@@ -138,6 +139,7 @@ namespace BlizzardDatabaseLib {
                 {
                     if (definition.arrLength > 1)
                     {
+                        column.Values.reserve(definition.arrLength);
                         for (int i = 0; i < definition.arrLength; i++)
                         {
                             auto intValue = bitReader.ReadUint32(32);
@@ -156,15 +158,13 @@ namespace BlizzardDatabaseLib {
                     auto intValue = bitReader.ReadUint32(32);
                     column.Value = _stringTable.at(intValue);
 
-                    std::vector<std::string> localizedValues = std::vector<std::string>(16);
-                    localizedValues.push_back(_stringTable.at(intValue));
+                    column.Values.reserve(16);
+                    column.Values.push_back(column.Value); // optional : store the first(enUS) value as single Value too. TODO: This doesn't support multi locales
                     for(int i = 0 ; i < 15; i++)
                     {
                         intValue = bitReader.ReadUint32(32);
-                        localizedValues.push_back(_stringTable.at(intValue));
+                        column.Values.push_back(_stringTable.at(intValue));
                     }
-
-                    column.Values = localizedValues;
                     row.Columns[definition.name] = column;
 
                     column = Structures::BlizzardDatabaseColumn();
@@ -178,13 +178,14 @@ namespace BlizzardDatabaseLib {
                 {
                     if (definition.arrLength > 1)
                     {
+                        column.Values.reserve(definition.arrLength);
                         for(int i = 0; i < definition.arrLength; i++)
                         {
                             auto intValue = bitReader.ReadSignedValue64(32).As<float>();
                             column.Values.push_back(std::to_string(intValue));
                         }
                     }
-                	else
+                	  else
                     {
                         auto intValue = bitReader.ReadSignedValue64(32).As<float>();
                         value = std::to_string(intValue);
