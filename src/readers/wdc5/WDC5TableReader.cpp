@@ -27,7 +27,7 @@ namespace BlizzardDatabaseLib {
             _streamReader->Jump(0);
 
             auto magicNumber = _streamReader->Read<unsigned int>();
-            if (magicNumber != Flag::TableFormatSignatures::WDC5_FMT_SIGNATURE)
+            if (magicNumber != Flag::TableFormatSignatures::WDC5_FMT_SIGNATURE && magicNumber != Flag::TableFormatSignatures::WDC4_FMT_SIGNATURE)
             {
                 std::cout << "Error Occured While Parsing WDC5 Header, Format Signature doesnt Match." << std::endl;
                 return;
