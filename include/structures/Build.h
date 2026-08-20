@@ -30,7 +30,14 @@ namespace BlizzardDatabaseLib {
                 build = std::atoi(buildVersionElements[3].c_str());
             }
 
-            inline unsigned int buildId() const { return build; };
+            inline short expansion() const { return _expansion; }
+            inline short major() const { return _major; }
+            inline short minor() const { return _minor; }
+            inline unsigned int buildId() const { return build; }
+
+            inline bool sameExpansionMajor(const Build& rhs) const {
+                return _expansion == rhs._expansion && _major == rhs._major;
+            }
 
             inline bool operator==(const Build& rhs) const {
                 return std::tie(_expansion, _major, _minor, build) == std::tie(rhs._expansion, rhs._major, rhs._minor, rhs.build);
