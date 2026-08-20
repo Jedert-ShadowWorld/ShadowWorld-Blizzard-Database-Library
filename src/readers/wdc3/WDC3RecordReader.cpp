@@ -46,7 +46,6 @@ namespace BlizzardDatabaseLib {
 
                 auto tablecolumn = columns.at(column.name);
                 auto type = tablecolumn.type;
-                auto columnValue = std::string();
 
                 Structures::BlizzardDatabaseColumn blizzColumn = Structures::BlizzardDatabaseColumn();
                 if (referenceData.Entries.contains(indexOfId))
@@ -60,9 +59,27 @@ namespace BlizzardDatabaseLib {
                 {
                     if (column.arrLength > 0)
                     {
-                        auto value = GetFieldArrayValue<unsigned int>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
+                        if (column.isSigned)
+                        {
+                            auto values = GetFieldArrayValue<int>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
+                            auto& out = row.Columns[column.name].Values;
+                            out.reserve(values.size());
+                            for (auto const value : values)
+                                out.push_back(std::to_string(value));
+                        }
+                        else
+                        {
+                            auto values = GetFieldArrayValue<unsigned int>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
+                            auto& out = row.Columns[column.name].Values;
+                            out.reserve(values.size());
+                            for (auto const value : values)
+                                out.push_back(std::to_string(value));
+                        }
 
-                       //TODO: Handle these Values
+                        // Keep Value useful for callers that only need the first array entry.
+                        if (!row.Columns[column.name].Values.empty())
+                            row.Columns[column.name].Value = row.Columns[column.name].Values.front();
+                        continue;
                     }
 
                     long long value = 0;
@@ -83,21 +100,27 @@ namespace BlizzardDatabaseLib {
                     if (column.size == 64 && !column.isSigned)
                         value = GetFieldValue<unsigned long long>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
 
-                    row.Columns[column.name].Value = std::to_string(value);             
+                    row.Columns[column.name].Value = std::to_string(value);
+                    continue;
                 }
 
                 if (Extension::String::Compare(type, "float"))
                 {
                     if (column.arrLength > 0)
                     {
-                        auto value = GetFieldArrayValue<float>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
-                       //TODO: Handle these values
+                        auto values = GetFieldArrayValue<float>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
+                        auto& out = row.Columns[column.name].Values;
+                        out.reserve(values.size());
+                        for (auto const value : values)
+                            out.push_back(std::to_string(value));
+                        if (!out.empty())
+                            row.Columns[column.name].Value = out.front();
+                        continue;
                     }
-                    else
-                    {
-                        auto value = GetFieldValue<float>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
-                        row.Columns[column.name].Value = std::to_string(value);
-                    }
+
+                    auto value = GetFieldValue<float>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
+                    row.Columns[column.name].Value = std::to_string(value);
+                    continue;
                 }
 
                 if (Extension::String::Compare(type, "string") || Extension::String::Compare(type, "locstring"))
@@ -106,9 +129,10 @@ namespace BlizzardDatabaseLib {
                     {
                         auto readerOffset = (indexOfId * _fileHeader.RecordSize) - (_fileHeader.RecordsCount * _fileHeader.RecordSize);
                         auto entries = GetFieldStringArrayValue(readerOffset, startOfStringTable, _bitReader, fieldMeta, columnMeta, palletData, commonData);
-
                         row.Columns[column.name].Values = entries;
-                        //TODO: Handle these values
+                        if (!entries.empty())
+                            row.Columns[column.name].Value = entries.front();
+                        continue;
                     }
 
                     if (Extension::Flag::HasFlag(_fileHeader.Flags, Flag::DatabaseVersion2Flag::VariableWidthRecord))
@@ -118,17 +142,13 @@ namespace BlizzardDatabaseLib {
                     }
                     else
                     {
-                     
                         auto readerOffset = (indexOfId * _fileHeader.RecordSize) - (_fileHeader.RecordsCount * _fileHeader.RecordSize);
-                        auto offsetPosition = readerOffset + (_bitReader.Position >> 3);     
+                        auto offsetPosition = readerOffset + (_bitReader.Position >> 3);
                         auto lookupId = GetFieldValue<int>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
                         auto stringLookupIndex = offsetPosition + (int)lookupId;
 
                         _streamReader->Jump(startOfStringTable + stringLookupIndex);
-
-                        auto value = _streamReader->ReadString();
-
-                        row.Columns[column.name].Value = value;
+                        row.Columns[column.name].Value = _streamReader->ReadString();
                     }
                 }
             }
