@@ -61,8 +61,10 @@ namespace BlizzardDatabaseLib {
                     if (column.arrLength > 0)
                     {
                         auto value = GetFieldArrayValue<unsigned int>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
-
-                       //TODO: Handle these Values
+                        row.Columns[column.name].Values.reserve(value.size());
+                        for (auto const& entry : value)
+                            row.Columns[column.name].Values.push_back(std::to_string(entry));
+                        continue;
                     }
 
                     long long value = 0;
@@ -91,7 +93,10 @@ namespace BlizzardDatabaseLib {
                     if (column.arrLength > 0)
                     {
                         auto value = GetFieldArrayValue<float>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
-                       //TODO: Handle these values
+                        row.Columns[column.name].Values.reserve(value.size());
+                        for (auto const& entry : value)
+                            row.Columns[column.name].Values.push_back(std::to_string(entry));
+                        continue;
                     }
                     else
                     {
@@ -108,7 +113,7 @@ namespace BlizzardDatabaseLib {
                         auto entries = GetFieldStringArrayValue(readerOffset, startOfStringTable, _bitReader, fieldMeta, columnMeta, palletData, commonData);
 
                         row.Columns[column.name].Values = entries;
-                        //TODO: Handle these values
+                        continue;
                     }
 
                     if (Extension::Flag::HasFlag(_fileHeader.Flags, Flag::DatabaseVersion2Flag::VariableWidthRecord))

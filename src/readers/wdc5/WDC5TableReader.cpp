@@ -35,7 +35,7 @@ namespace BlizzardDatabaseLib {
 
             Header = _streamReader->Read<Structures::WDC5Header>();
 
-            if (Header.sectionsCount == 0 || Header.RecordsCount == 0)
+            if (Header.sectionsCount == 0)
                 return;
 
             Sections = _streamReader->ReadArray<Structures::WDC5Section>(Header.sectionsCount);
@@ -147,6 +147,7 @@ namespace BlizzardDatabaseLib {
             std::unique_ptr<char[]> recordDataBlock;
             std::shared_ptr<WDC5SectionReader> sectionReader;
             auto sectionMaxIndex = 0;
+            auto previousSectionMaxIndex = 0;
             auto currentSectionIndex = 0;
             for (auto& section : _sectionLookup)
             {
@@ -157,48 +158,62 @@ namespace BlizzardDatabaseLib {
 
                     if (!section.second->IsOpen)
                         sectionDataBlock = section.second->OpenSection();
-                    sectionDataBlock = section.second->GetSection();
+                    else
+                        sectionDataBlock = section.second->GetSection();
 
-                    currentSectionIndex = index - _sectionMaxIndexCounter;
+                    currentSectionIndex = static_cast<int>(index) - previousSectionMaxIndex;
                     sectionMaxIndex = section.first;
 
                     break;
                 }
+
+                previousSectionMaxIndex = section.first;
             }
+
+            if (!sectionReader || !sectionDataBlock || currentSectionIndex < 0 || currentSectionIndex >= sectionReader->Section.NumRecords)
+                return Structures::BlizzardDatabaseRow(-1);
+
+            std::size_t recordLength = 0;
+            std::size_t recordBaseOffset = 0;
+            std::size_t sectionDataSize = 0;
 
             if (Extension::Flag::HasFlag(Header.Flags, Flag::DatabaseVersion2Flag::VariableWidthRecord))
             {
-                auto recordBaseOffset = sectionReader->SparseEntryData[currentSectionIndex].Offset - sectionReader->Section.FileOffset;
-                //auto recordBaseOffset = currentSectionIndex * Header.RecordSize;
-                auto recordLength = sectionReader->SparseEntryData[currentSectionIndex].Size;
-                auto recordStartPtr = sectionDataBlock.get() + recordBaseOffset;
-                recordDataBlock = std::make_unique<char[]>(recordLength);
+                if (currentSectionIndex >= static_cast<int>(sectionReader->SparseEntryData.size()))
+                    return Structures::BlizzardDatabaseRow(-1);
 
-                //Should be changed to read directly from the section Ptr
-                memcpy(recordDataBlock.get(), recordStartPtr, recordLength);
+                auto const& sparseEntry = sectionReader->SparseEntryData[currentSectionIndex];
+                if (sparseEntry.Size == 0 || sparseEntry.Offset < static_cast<unsigned int>(sectionReader->Section.FileOffset))
+                    return Structures::BlizzardDatabaseRow(-1);
+
+                recordBaseOffset = static_cast<std::size_t>(sparseEntry.Offset - sectionReader->Section.FileOffset);
+                recordLength = sparseEntry.Size;
+                sectionDataSize = static_cast<std::size_t>(sectionReader->Section.OffsetRecordsEndOffset - sectionReader->Section.FileOffset);
             }
             else
             {
-                auto recordBaseOffset = currentSectionIndex * Header.RecordSize;
-                auto recordLength = Header.RecordSize;
-                auto recordStartPtr = sectionDataBlock.get() + recordBaseOffset;
-                recordDataBlock = std::make_unique<char[]>(Header.RecordSize);
+                if (Header.RecordSize <= 0)
+                    return Structures::BlizzardDatabaseRow(-1);
 
-                //Should be changed to read directly from the section Ptr
-                memcpy(recordDataBlock.get(), recordStartPtr, Header.RecordSize);
+                recordBaseOffset = static_cast<std::size_t>(currentSectionIndex) * static_cast<std::size_t>(Header.RecordSize);
+                recordLength = static_cast<std::size_t>(Header.RecordSize);
+                sectionDataSize = static_cast<std::size_t>(sectionReader->Section.NumRecords) * static_cast<std::size_t>(Header.RecordSize);
             }
 
-            auto recordSize = Header.RecordSize;
-            auto bitReader = Stream::BitReader(recordDataBlock, Header.RecordSize);
+            if (recordLength == 0 || recordBaseOffset > sectionDataSize || recordLength > sectionDataSize - recordBaseOffset)
+                return Structures::BlizzardDatabaseRow(-1);
+
+            auto recordStartPtr = sectionDataBlock.get() + recordBaseOffset;
+            recordDataBlock = std::make_unique<char[]>(recordLength);
+            memcpy(recordDataBlock.get(), recordStartPtr, recordLength);
+
+            auto bitReader = Stream::BitReader(recordDataBlock, static_cast<unsigned int>(recordLength));
             auto recordReader = WDC5RecordReader(_streamReader, _versionDefinition, bitReader, Header);
 
             auto record = recordReader.ReadRecord(currentSectionIndex, sectionReader->Section, bitReader, Meta, ColumnMeta, PalletData, CommonData, sectionReader->ReferenceData, sectionReader->IndexData);
 
             if (sectionReader->IsOpen && static_cast<int>(index + 1) >= sectionMaxIndex)
-            {
                 sectionReader->CloseSection();
-                _sectionMaxIndexCounter += currentSectionIndex + 1;
-            }
 
             return record;
         }

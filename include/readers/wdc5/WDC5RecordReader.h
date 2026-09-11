@@ -5,6 +5,7 @@
 #include <structures/FileStructures.h>
 #include <extensions/FlagExtensions.h>
 #include <cassert>
+#include <stdexcept>
 
 namespace BlizzardDatabaseLib {
     namespace Reader {
@@ -16,6 +17,11 @@ namespace BlizzardDatabaseLib {
             Structures::VersionDefinition& _versionDefinition;
 
             std::shared_ptr<Stream::StreamReader> _streamReader;
+            std::runtime_error InvalidBitWidth(char const* context) const
+            {
+                return std::runtime_error("WDC5 " + _versionDefinition.tableName
+                    + " " + context + " has invalid zero bit width");
+            }
         public:
             WDC5RecordReader(std::shared_ptr<Stream::StreamReader> streamReader, Structures::VersionDefinition& versionDefinition, Stream::BitReader& bitReader, Structures::WDC5Header& fileHeader);
            
@@ -34,15 +40,21 @@ namespace BlizzardDatabaseLib {
                     auto bitSize = 32 - fieldMeta.Bits;
                     if (bitSize <= 0)
                         bitSize = columnMeta.compressionData.Immediate.BitWidth;
+                    if (bitSize <= 0)
+                        throw InvalidBitWidth("field");
 
                     return reader.ReadValue64(bitSize).As<T>();
                 }
                 case  Structures::CompressionType::SignedImmediate:
                 {
+                    if (columnMeta.compressionData.Immediate.BitWidth <= 0)
+                        throw InvalidBitWidth("signed immediate field");
                     return reader.ReadSignedValue64(columnMeta.compressionData.Immediate.BitWidth).As<T>();
                 }
                 case  Structures::CompressionType::Immediate:
                 {
+                    if (columnMeta.compressionData.Immediate.BitWidth <= 0)
+                        throw InvalidBitWidth("immediate field");
                     return reader.ReadValue64(columnMeta.compressionData.Immediate.BitWidth).As<T>();
                 }
                 case  Structures::CompressionType::Common:
@@ -54,6 +66,8 @@ namespace BlizzardDatabaseLib {
                 }
                 case  Structures::CompressionType::Pallet:
                 {
+                    if (columnMeta.compressionData.Pallet.BitWidth <= 0)
+                        throw InvalidBitWidth("pallet field");
                     auto value = reader.ReadUint32(columnMeta.compressionData.Pallet.BitWidth);
                     return palletData[value].As<T>();
                 }
@@ -61,6 +75,8 @@ namespace BlizzardDatabaseLib {
                 {
                     if (columnMeta.compressionData.Pallet.Cardinality != 1)
                         break;
+                    if (columnMeta.compressionData.Pallet.BitWidth <= 0)
+                        throw InvalidBitWidth("pallet array field");
 
                     auto palletArrayIndex = reader.ReadUint32(columnMeta.compressionData.Pallet.BitWidth);
                     return palletData[palletArrayIndex].As<T>();
@@ -84,6 +100,8 @@ namespace BlizzardDatabaseLib {
                     auto bitSize = 32 - fieldMeta.Bits;
                     if (bitSize <= 0)
                         bitSize = columnMeta.compressionData.Immediate.BitWidth;
+                    if (bitSize <= 0)
+                        throw InvalidBitWidth("array field");
 
                     auto entires = columnMeta.Size / bitSize;
                     for (auto i = 0; i < entires; i++)
@@ -96,6 +114,8 @@ namespace BlizzardDatabaseLib {
                 case  Structures::CompressionType::PalletArray:
                 {
                     auto cardinality = columnMeta.compressionData.Pallet.Cardinality;
+                    if (columnMeta.compressionData.Pallet.BitWidth <= 0)
+                        throw InvalidBitWidth("pallet array field");
                     auto index = reader.ReadUint32(columnMeta.compressionData.Pallet.BitWidth);
 
                     for (auto i = 0; i < cardinality; i++)
@@ -122,6 +142,8 @@ namespace BlizzardDatabaseLib {
                     auto bitSize = 32 - fieldMeta.Bits;
                     if (bitSize <= 0)
                         bitSize = columnMeta.compressionData.Immediate.BitWidth;
+                    if (bitSize <= 0)
+                        throw InvalidBitWidth("string array field");
 
                     auto entires = columnMeta.Size / bitSize;
                     for (auto i = 0; i < entires; i++)

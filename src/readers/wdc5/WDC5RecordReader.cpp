@@ -61,8 +61,10 @@ namespace BlizzardDatabaseLib {
                     if (column.arrLength > 0)
                     {
                         auto value = GetFieldArrayValue<unsigned int>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
-
-                       //TODO: Handle these Values
+                        row.Columns[column.name].Values.reserve(value.size());
+                        for (auto const& entry : value)
+                            row.Columns[column.name].Values.push_back(std::to_string(entry));
+                        continue;
                     }
 
                     long long value = 0;
@@ -91,7 +93,10 @@ namespace BlizzardDatabaseLib {
                     if (column.arrLength > 0)
                     {
                         auto value = GetFieldArrayValue<float>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
-                       //TODO: Handle these values
+                        row.Columns[column.name].Values.reserve(value.size());
+                        for (auto const& entry : value)
+                            row.Columns[column.name].Values.push_back(std::to_string(entry));
+                        continue;
                     }
                     else
                     {
@@ -104,11 +109,11 @@ namespace BlizzardDatabaseLib {
                 {
                     if (column.arrLength > 0)
                     {
-                        auto readerOffset = (indexOfId * _fileHeader.RecordSize) - (_fileHeader.RecordsCount * _fileHeader.RecordSize);
+                        auto readerOffset = (indexOfId * _fileHeader.RecordSize) - (section.NumRecords * _fileHeader.RecordSize);
                         auto entries = GetFieldStringArrayValue(readerOffset, startOfStringTable, _bitReader, fieldMeta, columnMeta, palletData, commonData);
 
                         row.Columns[column.name].Values = entries;
-                        //TODO: Handle these values
+                        continue;
                     }
 
                     if (Extension::Flag::HasFlag(_fileHeader.Flags, Flag::DatabaseVersion2Flag::VariableWidthRecord))
@@ -118,11 +123,10 @@ namespace BlizzardDatabaseLib {
                     }
                     else
                     {
-                     
-                        auto readerOffset = (indexOfId * _fileHeader.RecordSize) - (_fileHeader.RecordsCount * _fileHeader.RecordSize);
-                        auto offsetPosition = readerOffset + (_bitReader.Position >> 3);     
+                        auto readerOffset = (indexOfId * _fileHeader.RecordSize) - (section.NumRecords * _fileHeader.RecordSize);
+                        auto offsetPosition = readerOffset + (_bitReader.Position >> 3);
                         auto lookupId = GetFieldValue<int>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
-                        auto stringLookupIndex = offsetPosition + (int)lookupId;
+                        auto stringLookupIndex = offsetPosition + lookupId;
 
                         _streamReader->Jump(startOfStringTable + stringLookupIndex);
 

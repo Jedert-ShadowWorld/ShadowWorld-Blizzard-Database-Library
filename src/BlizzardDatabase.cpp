@@ -1,5 +1,6 @@
 #include "BlizzardDatabase.h"
 #include <cassert>
+#include <stdexcept>
 
 namespace BlizzardDatabaseLib
 {
@@ -32,7 +33,7 @@ namespace BlizzardDatabaseLib
         tableDefinition.tableName = tableName;
 
         if (!tableFound)
-            std::cout << "Version Not found" << std::endl;
+            throw std::runtime_error("Database definition version not found for " + tableName);
 
         // HACKFIX START -- We should probably be doing proper detection to see if a .db2 file exists first, if not fallback to .dbc
         auto fileName = "DBFilesClient\\" + tableName + ".dbc";
@@ -67,7 +68,7 @@ namespace BlizzardDatabaseLib
         auto tableFound = databaseDefinition.For(_build, tableDefinition);
 
         if (!tableFound)
-            std::cout << "Version Not found" << std::endl;
+            throw std::runtime_error("Database definition version not found for " + tableName);
 
         auto filePath = std::filesystem::path(outputDirectory) / (tableName + ".dbc");
         auto outputStream = std::ofstream(filePath, std::ios::out | std::ios::binary);
@@ -111,8 +112,7 @@ namespace BlizzardDatabaseLib
 
       if (!tableFound)
       {
-        std::cout << "Verion Not found" << std::endl;
-        return tableVersionDefinition;
+        throw std::runtime_error("Database definition version not found for " + tableName);
       }
 
       tableVersionDefinition.tableName = tableName;
