@@ -109,7 +109,8 @@ namespace BlizzardDatabaseLib {
                 {
                     if (column.arrLength > 0)
                     {
-                        auto readerOffset = (indexOfId * _fileHeader.RecordSize) - (section.NumRecords * _fileHeader.RecordSize);
+                        auto readerOffset = (indexOfId * _fileHeader.RecordSize)
+                            - ((_versionDefinition.useGlobalStringOffsets ? _fileHeader.RecordsCount : section.NumRecords) * _fileHeader.RecordSize);
                         auto entries = GetFieldStringArrayValue(readerOffset, startOfStringTable, _bitReader, fieldMeta, columnMeta, palletData, commonData);
 
                         row.Columns[column.name].Values = entries;
@@ -123,7 +124,8 @@ namespace BlizzardDatabaseLib {
                     }
                     else
                     {
-                        auto readerOffset = (indexOfId * _fileHeader.RecordSize) - (section.NumRecords * _fileHeader.RecordSize);
+                        auto readerOffset = (indexOfId * _fileHeader.RecordSize)
+                            - ((_versionDefinition.useGlobalStringOffsets ? _fileHeader.RecordsCount : section.NumRecords) * _fileHeader.RecordSize);
                         auto offsetPosition = readerOffset + (_bitReader.Position >> 3);
                         auto lookupId = GetFieldValue<int>(Id, _bitReader, fieldMeta, columnMeta, palletData, commonData);
                         auto stringLookupIndex = offsetPosition + lookupId;

@@ -20,5 +20,6 @@ namespace BlizzardDatabaseLib
 		DatabaseDefinition(const std::string& databaseDefinitionsDirectory);
 		Structures::DBDefinition Read();
 		bool For(const Structures::Build& build, Structures::VersionDefinition& definition);
+		bool ForLayoutHash(unsigned int layoutHash, Structures::VersionDefinition& definition);
 	};
 }

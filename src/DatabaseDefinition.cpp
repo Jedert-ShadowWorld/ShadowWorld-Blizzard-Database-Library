@@ -159,7 +159,7 @@ namespace BlizzardDatabaseLib
 
             if (containsLayoutToken)
             {
-                auto layoutTokenSize = LAYOUT_TOKEN.size() - 1;
+                auto layoutTokenSize = LAYOUT_TOKEN.size();
                 auto layoutHashesLine = line.substr(layoutTokenSize);
                 layoutHashes = Extension::String::Split(layoutHashesLine, ",");
             }
@@ -354,5 +354,41 @@ namespace BlizzardDatabaseLib
         }
 
         return true;
+    }
+
+    bool DatabaseDefinition::ForLayoutHash(unsigned int layoutHash, Structures::VersionDefinition& definition)
+    {
+        auto definitions = Read();
+        for (auto const& version : definitions.versionDefinitions)
+        {
+            for (auto const& hash : version.layoutHashes)
+            {
+                try
+                {
+                    if (std::stoul(hash, nullptr, 16) != layoutHash)
+                        continue;
+                }
+                catch (std::exception const&)
+                {
+                    continue;
+                }
+
+                definition = Structures::VersionDefinition();
+                definition.columnDefinitions = definitions.columnDefinitions;
+                definition.versionDefinitions = version;
+                definition.initializeRowDefinition();
+                for (int i = 0; i < definition.RowDefinition.ColumnDefinitions.size(); ++i)
+                {
+                    if (definition.versionDefinitions.definitions[i].isID)
+                    {
+                        assert(!definition.hasId);
+                        definition.hasId = true;
+                        definition.idColumnIndex = i;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -4,9 +4,10 @@
 
 namespace BlizzardDatabaseLib
 {
-    BlizzardDatabase::BlizzardDatabase(const std::string& databaseDefinitionDirectory, const Structures::Build& build)
+    BlizzardDatabase::BlizzardDatabase(const std::string& databaseDefinitionDirectory, const Structures::Build& build, bool preferDb2)
     : _databaseDefinitionFilesLocation(databaseDefinitionDirectory)
     , _build(build)
+    , _preferDb2(preferDb2)
     {
         _loadedTables = std::map<std::string, std::shared_ptr<BlizzardDatabaseTable>>();
         _blizzardTableReaderFactory = Reader::BlizzardTableReaderFactory();
@@ -32,13 +33,13 @@ namespace BlizzardDatabaseLib
         auto tableFound = databaseDefinition.For(_build, tableDefinition); // unclean table definition.  pruned one from : WDBCTableReader::RecordDefinition()
         tableDefinition.tableName = tableName;
 
-        if (!tableFound)
+        if (!tableFound && !_preferDb2 && tableName != "LiquidType")
             throw std::runtime_error("Database definition version not found for " + tableName);
 
         // HACKFIX START -- We should probably be doing proper detection to see if a .db2 file exists first, if not fallback to .dbc
         auto fileName = "DBFilesClient\\" + tableName + ".dbc";
         const Structures::Build& dbcCutoffBuild = Structures::Build("7.0.3.21287"); // First build with no more DBC files at all.
-        if (_build > dbcCutoffBuild) {
+        if (_preferDb2 || _build > dbcCutoffBuild) {
             fileName = "DBFilesClient\\" + tableName + ".db2";
         }
         
@@ -47,6 +48,21 @@ namespace BlizzardDatabaseLib
 
         auto streamReader = std::make_shared<Stream::StreamReader>(fileStream);
         auto fileFormatIdentifier = streamReader->ReadString(4);
+
+        if (!tableFound && (_preferDb2 || tableName == "LiquidType") &&
+            (fileFormatIdentifier == "WDC5" || fileFormatIdentifier == "WDC4") &&
+            streamReader->Length() >= 4 + sizeof(Structures::WDC5Header))
+        {
+            auto header = streamReader->Read<Structures::WDC5Header>();
+            tableFound = databaseDefinition.ForLayoutHash(header.LayoutHash, tableDefinition);
+            tableDefinition.tableName = tableName;
+            streamReader->Jump(4);
+        }
+
+        if (!tableFound)
+            throw std::runtime_error("Database definition build/layout not found for " + tableName);
+
+        tableDefinition.useGlobalStringOffsets = _preferDb2;
 
         auto tableReader = _blizzardTableReaderFactory.For(streamReader, tableDefinition, fileFormatIdentifier);
 

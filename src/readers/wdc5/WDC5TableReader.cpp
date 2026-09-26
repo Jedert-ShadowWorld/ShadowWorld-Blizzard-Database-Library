@@ -52,8 +52,8 @@ namespace BlizzardDatabaseLib {
 
             Meta = _streamReader->ReadArray<Structures::FieldMeta>(Header.FieldsCount);
 
-            // Encrypted status (WDC4)
-            for (int i = 0; i < Header.sectionsCount; i++)
+            // WDC4 stores encrypted section ID lists here; WDC5 starts column metadata immediately.
+            for (int i = 0; magicNumber == Flag::TableFormatSignatures::WDC4_FMT_SIGNATURE && i < Header.sectionsCount; i++)
             {
                 // If tactkey in section header is 0'd out (before the file gets to DBCD or section is not encrypted), skip these IDs
                 if (Sections[i].TactKeyLookup == 0)

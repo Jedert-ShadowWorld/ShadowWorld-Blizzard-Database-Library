@@ -137,6 +137,7 @@ namespace BlizzardDatabaseLib {
             friend class DatabaseDefinition;
 
             std::string tableName;
+            bool useGlobalStringOffsets = false;
             Structures::BlizzardDatabaseRowDefinition RowDefinition; // cleaned up data
 
             // those are initialized by DatabaseDefinition::For

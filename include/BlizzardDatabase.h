@@ -27,13 +27,14 @@ namespace BlizzardDatabaseLib
 	private:
 		const std::string _databaseDefinitionFilesLocation;
 		const Structures::Build _build;
+		const bool _preferDb2;
 		Reader::BlizzardTableReaderFactory _blizzardTableReaderFactory;
 
 		std::map<std::string, std::shared_ptr<BlizzardDatabaseTable>> _loadedTables;
 
 		std::map<std::string, Structures::VersionDefinition> _table_definitions;
 	public:
-		BlizzardDatabase(const std::string& databaseDefinitionDirectory, const Structures::Build& build);
+		BlizzardDatabase(const std::string& databaseDefinitionDirectory, const Structures::Build& build, bool preferDb2 = false);
 	BlizzardDatabaseTable& LoadTable(const std::string& tableName, std::function<std::shared_ptr<BlizzardDatabaseLib::Stream::IMemStream>(std::string const&)> file_callback);
 	
 		Structures::VersionDefinition& TableDefinition(const std::string& tableName);

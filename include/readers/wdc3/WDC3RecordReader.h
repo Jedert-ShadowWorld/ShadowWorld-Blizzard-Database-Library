@@ -133,6 +133,7 @@ namespace BlizzardDatabaseLib {
 
                         vector.push_back(value);
                     }
+                    break;
                 }
                 default:
                   assert(false);
