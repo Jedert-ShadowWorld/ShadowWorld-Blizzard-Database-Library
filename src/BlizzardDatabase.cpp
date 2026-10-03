@@ -33,9 +33,6 @@ namespace BlizzardDatabaseLib
         auto tableFound = databaseDefinition.For(_build, tableDefinition); // unclean table definition.  pruned one from : WDBCTableReader::RecordDefinition()
         tableDefinition.tableName = tableName;
 
-        if (!tableFound && !_preferDb2 && tableName != "LiquidType")
-            throw std::runtime_error("Database definition version not found for " + tableName);
-
         // HACKFIX START -- We should probably be doing proper detection to see if a .db2 file exists first, if not fallback to .dbc
         auto fileName = "DBFilesClient\\" + tableName + ".dbc";
         const Structures::Build& dbcCutoffBuild = Structures::Build("7.0.3.21287"); // First build with no more DBC files at all.
@@ -49,7 +46,7 @@ namespace BlizzardDatabaseLib
         auto streamReader = std::make_shared<Stream::StreamReader>(fileStream);
         auto fileFormatIdentifier = streamReader->ReadString(4);
 
-        if (!tableFound && (_preferDb2 || tableName == "LiquidType") &&
+        if (!tableFound &&
             (fileFormatIdentifier == "WDC5" || fileFormatIdentifier == "WDC4") &&
             streamReader->Length() >= 4 + sizeof(Structures::WDC5Header))
         {
@@ -69,6 +66,7 @@ namespace BlizzardDatabaseLib
         auto constructedTable = std::make_shared<BlizzardDatabaseTable>(tableReader, tableName);
         constructedTable->LoadTableStructure();
 
+        _table_definitions.insert_or_assign(tableName, tableDefinition);
         _loadedTables.emplace(tableName, constructedTable);
 
         return *_loadedTables[tableName];
@@ -135,7 +133,7 @@ namespace BlizzardDatabaseLib
 
       _table_definitions.emplace(tableName, tableVersionDefinition);
 
-      return tableVersionDefinition;
+      return _table_definitions.at(tableName);
     }
 
     Structures::BlizzardDatabaseRowDefinition& BlizzardDatabase::TableRecordDefinition(const std::string& tableName)
